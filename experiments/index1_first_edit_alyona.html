@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawMates — шаг 01 [build 2026-04-28-19:00]</title>
+<style>
+  /* ---- сцена ---- */
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #FFE8D6 0%, #FFC8A2 100%);
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  h1 {
+    color: #5A3A2A;
+    margin: 0;
+    font-weight: 600;
+    font-size: 22px;
+  }
+
+  /* ---- кот ---- */
+  .cat-stage {
+    width: 320px;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cat-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* idle: правое ухо изредка дёргается */
+  .ear-right {
+    transform-origin: 100px 80px;
+    animation: ear-twitch 4s ease-in-out infinite;
+  }
+  @keyframes ear-twitch {
+    0%, 90%, 100% { transform: rotate(0deg); }
+    93%           { transform: rotate(-8deg); }
+    96%           { transform: rotate(4deg); }
+  }
+
+/* idle: ЛЕВОЕ ухо изредка дёргается */
+  .ear-left {
+    transform-origin: 100px 80px;
+    animation: ear-twitch 6s ease-in-out infinite;
+  }
+  @keyframes ear-twitch {
+    0%, 80%, 100% { transform: rotate(0deg); }
+    93%           { transform: rotate(-8deg); }
+    96%           { transform: rotate(4deg); }
+  }
+
+
+  /* idle: тело едва-едва дышит */
+  .body-group {
+    transform-origin: 130px 200px;
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1, 1); }
+    50%      { transform: scale(1.02, 0.98); }
+  }
+
+  /* feeding: хвост машет 3 раза */
+  .tail {
+    transform-origin: 200px 220px;
+    transition: transform 0.2s;
+  }
+  .feeding .tail {
+    animation: tail-wag 0.5s ease-in-out 4;
+  }
+  @keyframes tail-wag {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(20deg); }
+    75%      { transform: rotate(-20deg); }
+  }
+
+  /* feeding: «мур!» вылезает над котом */
+  .speech {
+    opacity: 0;
+    transform: translateY(0);
+    transition: all 0.3s;
+  }
+  .feeding .speech {
+    opacity: 1;
+    transform: translateY(-20px);
+  }
+
+  /* ---- кнопка ---- */
+  .feed-btn {
+    background: #E07B95;
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    font-size: 18px;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #B05E73;
+    transition: all 0.1s;
+    font-family: inherit;
+  }
+  .feed-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #B05E73;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Наш тестовый зверь</h1>
+
+  <div class="cat-stage">
+    <svg class="cat-svg" viewBox="0 0 260 280" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- "мур!" появляется только когда кормишь -->
+      <text class="speech" x="130" y="40" text-anchor="middle"
+            font-size="22" font-weight="bold" fill="#AFEEEE">МуУурРРр! 💚</text>
+
+      <g class="body-group">
+
+        <!-- хвост (рисуется первым, чтоб был ЗА телом) -->
+        <path class="tail"
+              d="M 200 220 Q 240 200 235 160 Q 232 140 220 140"
+              stroke="#E8A05A" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path class="tail"
+              d="M 220 140 Q 218 138 215 138"
+              stroke="#F5DCB4" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+        <!-- тело -->
+        <ellipse cx="130" cy="200" rx="55" ry="40" fill="#E8A05A"/>
+        <!-- брюшко -->
+        <ellipse cx="130" cy="215" rx="38" ry="25" fill="#F5DCB4"/>
+        <!-- полоски на спине -->
+        <path d="M 100 175 Q 130 170 160 175" stroke="#B5732A" stroke-width="3" fill="none"/>
+        <path d="M 105 190 Q 130 187 155 190" stroke="#B5732A" stroke-width="3" fill="none"/>
+
+        <!-- лапы -->
+        <ellipse cx="105" cy="235" rx="10" ry="8" fill="#E8A05A"/>
+        <ellipse cx="155" cy="235" rx="10" ry="8" fill="#E8A05A"/>
+
+        <!-- голова -->
+        <circle cx="130" cy="115" r="65" fill="#E8A05A"/>
+
+        <!-- уши -->
+        <polygon class="ear-left" points="80,90 70,40 110,70" fill="#E8A05A"/>
+        <polygon class="ear-left" points="85,80 80,55 105,72" fill="#FF7F50"/>
+
+        <polygon class="ear-right" points="180,90 190,40 150,70" fill="#E8A05A"/>
+        <polygon class="ear-right" points="175,80 180,55 155,72" fill="#F5A8B8"/>
+
+        <!-- M-метка табби на лбу -->
+        <path d="M 115 80 L 122 95 L 130 80 L 138 95 L 145 80"
+              stroke="#B5732A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- мордочка (светлая зона вокруг рта) -->
+        <ellipse cx="130" cy="140" rx="32" ry="22" fill="#F5DCB4"/>
+
+        <!-- глаза (миндалевидные, зелёные) -->
+        <ellipse cx="108" cy="115" rx="9" ry="11" fill="white"/>
+        <ellipse cx="108" cy="115" rx="7" ry="10" fill="#4FA858"/>
+        <ellipse cx="108" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
+        <circle cx="106" cy="111" r="1.5" fill="white"/>
+
+        <ellipse cx="152" cy="115" rx="9" ry="11" fill="white"/>
+        <ellipse cx="152" cy="115" rx="7" ry="10" fill="#4FA858"/>
+        <ellipse cx="152" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
+        <circle cx="150" cy="111" r="1.5" fill="white"/>
+
+        <!-- нос -->
+        <path d="M 125 138 L 130 145 L 135 138 Z" fill="#E07B95"/>
+
+        <!-- рот -->
+        <path d="M 130 145 Q 130 152 122 152" stroke="#2A2A2A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 130 145 Q 130 152 138 152" stroke="#2A2A2A" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+        <!-- усы -->
+        <line x1="98"  y1="142" x2="78"  y2="138" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="98"  y1="148" x2="78"  y2="148" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="98"  y1="154" x2="78"  y2="158" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+
+        <line x1="162" y1="142" x2="182" y2="138" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="162" y1="148" x2="182" y2="148" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="162" y1="154" x2="182" y2="158" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
+
+      </g>
+    </svg>
+  </div>
+
+  <button class="feed-btn">Покормить</button>
+
+<script>
+  // когда жмут на кнопку — вешаем класс "feeding" на сцену кота
+  // он запускает анимацию хвоста и показывает "мур!"
+  // через 2.5 секунды снимаем класс — возвращается к обычному состоянию
+  const stage = document.querySelector('.cat-stage');
+  const btn   = document.querySelector('.feed-btn');
+
+  btn.addEventListener('click', () => {
+    stage.classList.add('feeding');
+    setTimeout(() => stage.classList.remove('feeding'), 2500);
+  });
+</script>
+
+</body>
+</html>
