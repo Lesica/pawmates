@@ -221,25 +221,34 @@
     transform: translateY(-20px);
   }
 
-  /* ---- ДЕЙСТВИЕ: pet (глаза щурятся + сердечко) ---- */
+  /* ---- ДЕЙСТВИЕ: pet (глаза превращаются в счастливые дуги ∪∪) ---- */
   .eye-iris-left, .eye-iris-right,
   .eye-pupil-left, .eye-pupil-right,
-  .eye-glint-left, .eye-glint-right {
-    transition: transform 0.3s, opacity 0.3s;
-    transform-origin: center;
+  .eye-glint-left, .eye-glint-right,
+  .eye-white-left, .eye-white-right {
+    transition: opacity 0.3s;
   }
+  /* при погладить — обычные глаза прячем, счастливые дуги показываем */
+  .acting-pet .eye-white-left,
+  .acting-pet .eye-white-right,
   .acting-pet .eye-iris-left,
   .acting-pet .eye-iris-right,
   .acting-pet .eye-pupil-left,
   .acting-pet .eye-pupil-right,
   .acting-pet .eye-glint-left,
   .acting-pet .eye-glint-right {
-    transform: scaleY(0.2);
+    opacity: 0;
+  }
+  .acting-pet .eye-happy-left,
+  .acting-pet .eye-happy-right {
+    opacity: 1;
   }
   .acting-pet .speech-heart {
     opacity: 1;
     transform: translateY(-20px);
   }
+  /* "счастливые" глазки по умолчанию невидимы */
+  .eye-happy-left, .eye-happy-right { opacity: 0; transition: opacity 0.3s; }
 
   /* ---- ДЕЙСТВИЕ: sleep (глаза закрыты + Z над головой) ---- */
   .acting-sleep .eye-white-left,
@@ -408,6 +417,9 @@
           <!-- ЛЕВЫЙ ГЛАЗ (закрытый — невидим, появляется только в acting-sleep) -->
           <path class="eye-closed-left" d="M 99 115 Q 108 119 117 115"
                 stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- ЛЕВЫЙ ГЛАЗ (счастливый, дуга ∪ — появляется в acting-pet) -->
+          <path class="eye-happy-left" d="M 99 117 Q 108 108 117 117"
+                stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 
           <!-- ПРАВЫЙ ГЛАЗ (открытый) -->
           <ellipse class="eye-white-right"  cx="152" cy="115" rx="9" ry="11" fill="white"/>
@@ -417,6 +429,9 @@
           <!-- ПРАВЫЙ ГЛАЗ (закрытый) -->
           <path class="eye-closed-right" d="M 143 115 Q 152 119 161 115"
                 stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- ПРАВЫЙ ГЛАЗ (счастливый, дуга ∪) -->
+          <path class="eye-happy-right" d="M 143 117 Q 152 108 161 117"
+                stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 
           <!-- нос -->
           <path d="M 125 138 L 130 145 L 135 138 Z" fill="#E07B95"/>
