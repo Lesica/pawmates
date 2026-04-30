@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PawMates — шаг 01 [build 2026-04-28-19:00]</title>
+<title>PawMates — шаг 02 [build 2026-04-30-tg]</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   /* ---- сцена ---- */
   body {
@@ -193,7 +194,20 @@
   <button class="feed-btn">Покормить</button>
 
 <script>
-  // когда жмут на кнопку — вешаем класс "feeding" на сцену кота
+  // ---- Telegram Mini App init (если открыт в Telegram) ----
+  // Если нет — переменная tg будет undefined и страница работает как обычная веб-страница.
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();        // сообщаем Telegram что готовы
+    tg.expand();       // на весь экран
+    // подгоняем фон под тему Telegram (тёмная/светлая)
+    if (tg.themeParams?.bg_color) {
+      document.body.style.background = tg.themeParams.bg_color;
+    }
+  }
+
+  // ---- логика кнопки "Покормить" ----
+  // когда жмут — вешаем класс "feeding" на сцену кота
   // он запускает анимацию хвоста и показывает "мур!"
   // через 2.5 секунды снимаем класс — возвращается к обычному состоянию
   const stage = document.querySelector('.cat-stage');
@@ -202,6 +216,8 @@
   btn.addEventListener('click', () => {
     stage.classList.add('feeding');
     setTimeout(() => stage.classList.remove('feeding'), 2500);
+    // если в Telegram — лёгкий haptic feedback (телефон чуть вибрирует)
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   });
 </script>
 
