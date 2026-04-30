@@ -3,22 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PawMates — шаг 03 [build 2026-04-30-room]</title>
+<title>PawMates — шаг 04 [build 2026-04-30-actions]</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    /* основные цвета комнаты — менять можно тут одной строкой */
-    --wall-color: #F0DEC7;          /* тёплый бежевый — задняя стена */
-    --floor-color-light: #B58863;   /* верх пола (ближе) */
-    --floor-color-dark:  #8B6443;   /* низ пола (дальше) */
-    --window-frame:      #6B4F32;   /* деревянная рама окна */
-
-    /* динамические — меняются JS'ом по времени суток */
-    --sky-color:        #87CEEB;
-    --time-overlay:     transparent;
+    --wall-color: #F0DEC7;
+    --floor-color-light: #B58863;
+    --floor-color-dark:  #8B6443;
+    --window-frame:      #6B4F32;
+    --sky-color:         #87CEEB;
+    --time-overlay:      transparent;
   }
 
-  /* ---- общая страница ---- */
   body {
     margin: 0;
     min-height: 100vh;
@@ -28,8 +24,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 20px 12px 40px;
-    gap: 14px;
+    padding: 16px 12px 32px;
+    gap: 12px;
     transition: background 1s;
   }
 
@@ -46,14 +42,13 @@
     position: relative;
     width: 100%;
     max-width: 360px;
-    aspect-ratio: 3 / 4;          /* 360x480 пропорция, на телефоне resize'ится */
+    aspect-ratio: 3 / 4;
     background: var(--wall-color);
     border-radius: 14px;
     box-shadow: 0 6px 24px rgba(70, 50, 30, 0.18);
     overflow: hidden;
   }
 
-  /* окно на стене — справа сверху */
   .window {
     position: absolute;
     top: 8%;
@@ -63,30 +58,18 @@
     background: var(--sky-color);
     border: 6px solid var(--window-frame);
     border-radius: 4px;
-    box-shadow:
-      inset 0 0 0 1px rgba(0,0,0,0.1),
-      0 2px 6px rgba(70, 50, 30, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 6px rgba(70, 50, 30, 0.2);
     transition: background 1s;
     overflow: hidden;
   }
-  /* крестовина окна */
   .window::before, .window::after {
     content: '';
     position: absolute;
     background: var(--window-frame);
   }
-  .window::before {
-    top: 0; bottom: 0;
-    left: 50%; width: 4px;
-    transform: translateX(-50%);
-  }
-  .window::after {
-    left: 0; right: 0;
-    top: 50%; height: 4px;
-    transform: translateY(-50%);
-  }
+  .window::before { top: 0; bottom: 0; left: 50%; width: 4px; transform: translateX(-50%); }
+  .window::after  { left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); }
 
-  /* декорация в окне (солнце / облако / луна) — меняется по времени */
   .window-decoration {
     position: absolute;
     top: 10%; left: 50%;
@@ -97,10 +80,9 @@
     transition: opacity 1s;
   }
 
-  /* подоконник — узкая полоска под окном */
   .windowsill {
     position: absolute;
-    top: calc(8% + 30% * 5/4 - 4px); /* под окном; пересчитывается через CSS calc */
+    top: calc(8% + 30% * 5/4 - 4px);
     right: calc(10% - 4px);
     width: calc(30% + 8px);
     height: 6px;
@@ -109,25 +91,16 @@
     box-shadow: 0 2px 4px rgba(70, 50, 30, 0.3);
   }
 
-  /* пол снизу */
   .floor {
     position: absolute;
     bottom: 0; left: 0; right: 0;
     height: 28%;
-    background: linear-gradient(180deg, var(--floor-color-light) 0%, var(--floor-color-dark) 100%);
-    /* лёгкая текстура досок через повторяющийся градиент */
     background-image:
-      repeating-linear-gradient(
-        90deg,
-        transparent 0,
-        transparent 38px,
-        rgba(0, 0, 0, 0.08) 38px,
-        rgba(0, 0, 0, 0.08) 40px
-      ),
+      repeating-linear-gradient(90deg,
+        transparent 0, transparent 38px,
+        rgba(0,0,0,0.08) 38px, rgba(0,0,0,0.08) 40px),
       linear-gradient(180deg, var(--floor-color-light) 0%, var(--floor-color-dark) 100%);
   }
-
-  /* плинтус — тонкая линия между стеной и полом */
   .floor::before {
     content: '';
     position: absolute;
@@ -136,39 +109,69 @@
     background: rgba(70, 40, 20, 0.4);
   }
 
-  /* ---- кот стоит на полу ---- */
+  /* ---- BOND-индикатор ---- */
+  .bond-counter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #5A3A2A;
+    font-weight: 600;
+    z-index: 4;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .bond-counter.gain {
+    animation: bond-pulse 0.5s ease-out;
+  }
+  @keyframes bond-pulse {
+    0%   { transform: scale(1);   color: #5A3A2A; }
+    50%  { transform: scale(1.2); color: #4FA858; }
+    100% { transform: scale(1);   color: #5A3A2A; }
+  }
+
+  /* всплывающий "+N" поверх индикатора */
+  .bond-popup {
+    position: absolute;
+    top: 35px;
+    left: 14px;
+    color: #4FA858;
+    font-weight: 700;
+    font-size: 15px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  }
+  .bond-popup.show {
+    animation: bond-popup-anim 1.2s ease-out;
+  }
+  @keyframes bond-popup-anim {
+    0%   { opacity: 0; transform: translateY(0); }
+    20%  { opacity: 1; transform: translateY(-4px); }
+    100% { opacity: 0; transform: translateY(-30px); }
+  }
+
+  /* ---- кот ---- */
   .cat-stage {
     position: absolute;
-    bottom: 8%;                    /* стоит на полу, чуть приподнят */
+    bottom: 8%;
     left: 50%;
     transform: translateX(-50%);
     width: 78%;
     aspect-ratio: 1 / 1;
     z-index: 2;
   }
-  .cat-svg {
-    width: 100%;
-    height: 100%;
-  }
+  .cat-svg { width: 100%; height: 100%; }
 
-  /* ---- overlay по времени суток (поверх всего) ---- */
-  .time-overlay {
-    position: absolute;
-    inset: 0;
-    background: var(--time-overlay);
-    pointer-events: none;
-    mix-blend-mode: multiply;
-    transition: background 1s;
-    z-index: 3;
-  }
-
-  /* ---- АНИМАЦИИ кота ---- */
-  /* idle: правое ухо дёргается (4s цикл) */
+  /* idle ушей */
   .ear-right {
     transform-origin: 165px 80px;
     animation: ear-twitch 4s ease-in-out infinite;
   }
-  /* idle: левое ухо дёргается (6s цикл — намеренно асинхронно) */
   .ear-left {
     transform-origin: 100px 80px;
     animation: ear-twitch 6s ease-in-out infinite;
@@ -179,7 +182,7 @@
     96%           { transform: rotate(4deg); }
   }
 
-  /* idle: тело едва-едва дышит */
+  /* idle тело — дышит */
   .body-group {
     transform-origin: 130px 200px;
     animation: breathe 3s ease-in-out infinite;
@@ -189,12 +192,9 @@
     50%      { transform: scale(1.02, 0.98); }
   }
 
-  /* feeding: хвост машет 4 раза */
-  .tail {
-    transform-origin: 200px 220px;
-    transition: transform 0.2s;
-  }
-  .feeding .tail {
+  /* ---- ДЕЙСТВИЕ: feed (хвост машет, МуУурРРр) ---- */
+  .tail { transform-origin: 200px 220px; transition: transform 0.2s; }
+  .acting-feed .tail {
     animation: tail-wag 0.5s ease-in-out 4;
   }
   @keyframes tail-wag {
@@ -202,34 +202,135 @@
     25%      { transform: rotate(20deg); }
     75%      { transform: rotate(-20deg); }
   }
-
-  /* feeding: «мур!» вылезает над котом */
-  .speech {
-    opacity: 0;
-    transform: translateY(0);
-    transition: all 0.3s;
-  }
-  .feeding .speech {
+  .acting-feed .speech-mur {
     opacity: 1;
     transform: translateY(-20px);
   }
 
-  /* ---- кнопка ---- */
-  .feed-btn {
+  /* ---- ДЕЙСТВИЕ: play (прыжок + бабочка) ---- */
+  .acting-play .body-group {
+    animation: cat-jump 0.6s ease-in-out 2, breathe 3s ease-in-out infinite;
+  }
+  @keyframes cat-jump {
+    0%, 100% { transform: scale(1, 1)        translateY(0); }
+    30%      { transform: scale(1.05, 0.95)  translateY(0); }
+    60%      { transform: scale(0.98, 1.04)  translateY(-25px); }
+  }
+  .acting-play .speech-yay {
+    opacity: 1;
+    transform: translateY(-20px);
+  }
+
+  /* ---- ДЕЙСТВИЕ: pet (глаза щурятся + сердечко) ---- */
+  .eye-iris-left, .eye-iris-right,
+  .eye-pupil-left, .eye-pupil-right,
+  .eye-glint-left, .eye-glint-right {
+    transition: transform 0.3s, opacity 0.3s;
+    transform-origin: center;
+  }
+  .acting-pet .eye-iris-left,
+  .acting-pet .eye-iris-right,
+  .acting-pet .eye-pupil-left,
+  .acting-pet .eye-pupil-right,
+  .acting-pet .eye-glint-left,
+  .acting-pet .eye-glint-right {
+    transform: scaleY(0.2);
+  }
+  .acting-pet .speech-heart {
+    opacity: 1;
+    transform: translateY(-20px);
+  }
+
+  /* ---- ДЕЙСТВИЕ: sleep (глаза закрыты + Z над головой) ---- */
+  .acting-sleep .eye-white-left,
+  .acting-sleep .eye-white-right,
+  .acting-sleep .eye-iris-left,
+  .acting-sleep .eye-iris-right,
+  .acting-sleep .eye-pupil-left,
+  .acting-sleep .eye-pupil-right,
+  .acting-sleep .eye-glint-left,
+  .acting-sleep .eye-glint-right {
+    opacity: 0;
+  }
+  .acting-sleep .eye-closed-left,
+  .acting-sleep .eye-closed-right {
+    opacity: 1;
+  }
+  .acting-sleep .speech-zzz {
+    opacity: 1;
+    transform: translateY(-20px);
+    animation: zzz-float 2s ease-in-out infinite;
+  }
+  @keyframes zzz-float {
+    0%, 100% { transform: translateY(-20px) translateX(0); }
+    50%      { transform: translateY(-25px) translateX(4px); }
+  }
+
+  /* speech-bubbles — общее правило */
+  .speech-mur, .speech-yay, .speech-heart, .speech-zzz {
+    opacity: 0;
+    transform: translateY(0);
+    transition: all 0.4s;
+  }
+  /* "закрытые" глаза по умолчанию невидимы */
+  .eye-closed-left, .eye-closed-right { opacity: 0; transition: opacity 0.3s; }
+
+  /* ---- кнопки действий ---- */
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .action-btn {
     background: #E07B95;
     color: white;
     border: none;
-    padding: 14px 32px;
-    font-size: 18px;
-    border-radius: 30px;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 24px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #B05E73;
+    box-shadow: 0 3px 0 #B05E73;
     transition: all 0.1s;
     font-family: inherit;
+    font-weight: 600;
   }
-  .feed-btn:active {
+  .action-btn:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 #B05E73;
+    box-shadow: 0 1px 0 #B05E73;
+  }
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 3px 0 #B05E73;
+  }
+  /* разные оттенки для разных действий */
+  .action-btn[data-action="play"] {
+    background: #6BB6E8;
+    box-shadow: 0 3px 0 #4A8FBE;
+  }
+  .action-btn[data-action="play"]:active { box-shadow: 0 1px 0 #4A8FBE; }
+  .action-btn[data-action="pet"] {
+    background: #F0B95A;
+    box-shadow: 0 3px 0 #C49142;
+  }
+  .action-btn[data-action="pet"]:active { box-shadow: 0 1px 0 #C49142; }
+  .action-btn[data-action="sleep"] {
+    background: #9C7BC9;
+    box-shadow: 0 3px 0 #6E519A;
+  }
+  .action-btn[data-action="sleep"]:active { box-shadow: 0 1px 0 #6E519A; }
+
+  .time-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--time-overlay);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    transition: background 1s;
+    z-index: 3;
   }
 </style>
 </head>
@@ -238,27 +339,34 @@
   <h1>Наш тестовый зверь</h1>
 
   <div class="room">
+    <!-- bond индикатор -->
+    <div class="bond-counter">Bond 0</div>
+    <div class="bond-popup"></div>
 
-    <!-- окно (с динамическим небом) -->
+    <!-- окно -->
     <div class="window">
       <div class="window-decoration">☁️</div>
     </div>
     <div class="windowsill"></div>
 
-    <!-- пол -->
     <div class="floor"></div>
 
-    <!-- кот -->
     <div class="cat-stage">
       <svg class="cat-svg" viewBox="0 0 260 280" xmlns="http://www.w3.org/2000/svg">
 
-        <!-- "мур!" появляется только когда кормишь -->
-        <text class="speech" x="130" y="40" text-anchor="middle"
+        <!-- speech bubbles (видимы только в acting-* состояниях) -->
+        <text class="speech-mur"   x="130" y="40" text-anchor="middle"
               font-size="22" font-weight="bold" fill="#AFEEEE">МуУурРРр! 💚</text>
+        <text class="speech-yay"   x="130" y="40" text-anchor="middle"
+              font-size="22" font-weight="bold" fill="#6BB6E8">Ура! 🎾</text>
+        <text class="speech-heart" x="130" y="40" text-anchor="middle"
+              font-size="22" font-weight="bold" fill="#E07B95">мрр... ❤</text>
+        <text class="speech-zzz"   x="130" y="40" text-anchor="middle"
+              font-size="22" font-weight="bold" fill="#9C7BC9">Z z z...</text>
 
         <g class="body-group">
 
-          <!-- хвост (рисуется первым, чтоб был ЗА телом) -->
+          <!-- хвост -->
           <path class="tail"
                 d="M 200 220 Q 240 200 235 160 Q 232 140 220 140"
                 stroke="#E8A05A" stroke-width="14" fill="none" stroke-linecap="round"/>
@@ -268,9 +376,7 @@
 
           <!-- тело -->
           <ellipse cx="130" cy="200" rx="55" ry="40" fill="#E8A05A"/>
-          <!-- брюшко -->
           <ellipse cx="130" cy="215" rx="38" ry="25" fill="#F5DCB4"/>
-          <!-- полоски на спине -->
           <path d="M 100 175 Q 130 170 160 175" stroke="#B5732A" stroke-width="3" fill="none"/>
           <path d="M 105 190 Q 130 187 155 190" stroke="#B5732A" stroke-width="3" fill="none"/>
 
@@ -282,33 +388,38 @@
           <circle cx="130" cy="115" r="65" fill="#E8A05A"/>
 
           <!-- уши -->
-          <polygon class="ear-left" points="80,90 70,40 110,70" fill="#E8A05A"/>
-          <polygon class="ear-left" points="85,80 80,55 105,72" fill="#FF7F50"/>
-
+          <polygon class="ear-left"  points="80,90 70,40 110,70" fill="#E8A05A"/>
+          <polygon class="ear-left"  points="85,80 80,55 105,72" fill="#FF7F50"/>
           <polygon class="ear-right" points="180,90 190,40 150,70" fill="#E8A05A"/>
           <polygon class="ear-right" points="175,80 180,55 155,72" fill="#F5A8B8"/>
 
-          <!-- M-метка табби на лбу -->
+          <!-- M-метка табби -->
           <path d="M 115 80 L 122 95 L 130 80 L 138 95 L 145 80"
                 stroke="#B5732A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 
-          <!-- мордочка (светлая зона вокруг рта) -->
+          <!-- мордочка -->
           <ellipse cx="130" cy="140" rx="32" ry="22" fill="#F5DCB4"/>
 
-          <!-- глаза (миндалевидные, зелёные) -->
-          <ellipse cx="108" cy="115" rx="9" ry="11" fill="white"/>
-          <ellipse cx="108" cy="115" rx="7" ry="10" fill="#4FA858"/>
-          <ellipse cx="108" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
-          <circle cx="106" cy="111" r="1.5" fill="white"/>
+          <!-- ЛЕВЫЙ ГЛАЗ (открытый) -->
+          <ellipse class="eye-white-left"  cx="108" cy="115" rx="9" ry="11" fill="white"/>
+          <ellipse class="eye-iris-left"   cx="108" cy="115" rx="7" ry="10" fill="#4FA858"/>
+          <ellipse class="eye-pupil-left"  cx="108" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
+          <circle  class="eye-glint-left"  cx="106" cy="111" r="1.5" fill="white"/>
+          <!-- ЛЕВЫЙ ГЛАЗ (закрытый — невидим, появляется только в acting-sleep) -->
+          <path class="eye-closed-left" d="M 99 115 Q 108 119 117 115"
+                stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
 
-          <ellipse cx="152" cy="115" rx="9" ry="11" fill="white"/>
-          <ellipse cx="152" cy="115" rx="7" ry="10" fill="#4FA858"/>
-          <ellipse cx="152" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
-          <circle cx="150" cy="111" r="1.5" fill="white"/>
+          <!-- ПРАВЫЙ ГЛАЗ (открытый) -->
+          <ellipse class="eye-white-right"  cx="152" cy="115" rx="9" ry="11" fill="white"/>
+          <ellipse class="eye-iris-right"   cx="152" cy="115" rx="7" ry="10" fill="#4FA858"/>
+          <ellipse class="eye-pupil-right"  cx="152" cy="115" rx="2" ry="9" fill="#1A1A1A"/>
+          <circle  class="eye-glint-right"  cx="150" cy="111" r="1.5" fill="white"/>
+          <!-- ПРАВЫЙ ГЛАЗ (закрытый) -->
+          <path class="eye-closed-right" d="M 143 115 Q 152 119 161 115"
+                stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round"/>
 
           <!-- нос -->
           <path d="M 125 138 L 130 145 L 135 138 Z" fill="#E07B95"/>
-
           <!-- рот -->
           <path d="M 130 145 Q 130 152 122 152" stroke="#2A2A2A" stroke-width="2" fill="none" stroke-linecap="round"/>
           <path d="M 130 145 Q 130 152 138 152" stroke="#2A2A2A" stroke-width="2" fill="none" stroke-linecap="round"/>
@@ -317,7 +428,6 @@
           <line x1="98"  y1="142" x2="78"  y2="138" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="98"  y1="148" x2="78"  y2="148" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="98"  y1="154" x2="78"  y2="158" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
-
           <line x1="162" y1="142" x2="182" y2="138" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="162" y1="148" x2="182" y2="148" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
           <line x1="162" y1="154" x2="182" y2="158" stroke="#2A2A2A" stroke-width="1.5" stroke-linecap="round"/>
@@ -326,14 +436,19 @@
       </svg>
     </div>
 
-    <!-- overlay по времени суток (поверх всего, чуть подкрашивает сцену) -->
     <div class="time-overlay"></div>
   </div>
 
-  <button class="feed-btn">Покормить</button>
+  <!-- 4 действия -->
+  <div class="actions">
+    <button class="action-btn" data-action="feed">🍖 Покормить</button>
+    <button class="action-btn" data-action="play">🎾 Поиграть</button>
+    <button class="action-btn" data-action="pet">✋ Погладить</button>
+    <button class="action-btn" data-action="sleep">💤 Уложить спать</button>
+  </div>
 
 <script>
-  // ---- Telegram Mini App init (если открыт в Telegram) ----
+  // ---- Telegram Mini App init ----
   const tg = window.Telegram?.WebApp;
   if (tg) {
     tg.ready();
@@ -344,54 +459,127 @@
   }
 
   // ---- ВРЕМЯ СУТОК ----
-  // меняет цвет неба в окне + лёгкий overlay поверх всей комнаты,
-  // чтобы создать настроение утра/дня/вечера/ночи
   function updateTimeOfDay() {
     const hour = new Date().getHours();
     const root = document.documentElement;
     const decoration = document.querySelector('.window-decoration');
 
     let sky, overlay, deco;
-
-    if (hour >= 6 && hour < 11) {           // утро
-      sky      = '#FFD9A8';                 // мягкий тёплый
-      overlay  = 'rgba(255, 220, 170, 0.06)';
-      deco     = '☀️';
-    } else if (hour >= 11 && hour < 17) {   // день
-      sky      = '#87CEEB';                 // ясное голубое
-      overlay  = 'transparent';
-      deco     = '☁️';
-    } else if (hour >= 17 && hour < 20) {   // вечер
-      sky      = '#FF8C6E';                 // оранжево-розовый закат
-      overlay  = 'rgba(255, 130, 90, 0.10)';
-      deco     = '🌅';
-    } else if (hour >= 20 && hour < 22) {   // сумерки
-      sky      = '#3D5A80';                 // тёмно-синий
-      overlay  = 'rgba(40, 50, 90, 0.18)';
-      deco     = '🌆';
-    } else {                                 // ночь (22-5)
-      sky      = '#1B2D4F';                 // глубокий ночной
-      overlay  = 'rgba(15, 25, 55, 0.30)';
-      deco     = '🌙';
+    if (hour >= 6 && hour < 11) {
+      sky = '#FFD9A8'; overlay = 'rgba(255, 220, 170, 0.06)'; deco = '☀️';
+    } else if (hour >= 11 && hour < 17) {
+      sky = '#87CEEB'; overlay = 'transparent'; deco = '☁️';
+    } else if (hour >= 17 && hour < 20) {
+      sky = '#FF8C6E'; overlay = 'rgba(255, 130, 90, 0.10)'; deco = '🌅';
+    } else if (hour >= 20 && hour < 22) {
+      sky = '#3D5A80'; overlay = 'rgba(40, 50, 90, 0.18)'; deco = '🌆';
+    } else {
+      sky = '#1B2D4F'; overlay = 'rgba(15, 25, 55, 0.30)'; deco = '🌙';
     }
-
     root.style.setProperty('--sky-color', sky);
     root.style.setProperty('--time-overlay', overlay);
     decoration.textContent = deco;
   }
-
   updateTimeOfDay();
-  setInterval(updateTimeOfDay, 60_000);   // обновлять раз в минуту
+  setInterval(updateTimeOfDay, 60_000);
 
-  // ---- логика кнопки "Покормить" ----
-  const stage = document.querySelector('.cat-stage');
-  const btn   = document.querySelector('.feed-btn');
+  // ---- BOND система ----
+  const BOND_KEY = 'pawmate_bond_v1';
+  const RECENT_KEY = 'pawmate_recent_v1';
 
-  btn.addEventListener('click', () => {
-    stage.classList.add('feeding');
-    setTimeout(() => stage.classList.remove('feeding'), 2500);
+  // базовые награды Bond за каждое действие
+  const ACTION_REWARDS = {
+    feed:  5,
+    play:  8,
+    pet:  10,
+    sleep: 3,
+  };
+
+  // загрузка состояния из localStorage
+  let bond = parseInt(localStorage.getItem(BOND_KEY) || '0', 10);
+  let recentActions = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+
+  function updateBondUI(deltaShown) {
+    const counter = document.querySelector('.bond-counter');
+    counter.textContent = `Bond ${bond}`;
+    if (deltaShown !== undefined) {
+      counter.classList.remove('gain');
+      void counter.offsetWidth;     // re-trigger animation
+      counter.classList.add('gain');
+
+      const popup = document.querySelector('.bond-popup');
+      popup.textContent = `+${deltaShown}`;
+      popup.classList.remove('show');
+      void popup.offsetWidth;
+      popup.classList.add('show');
+    }
+  }
+
+  // расчёт множителя Bond (diminishing return + variety bonus)
+  function computeMultiplier(actionName, now) {
+    // diminishing return — если то же действие повторяется в последние 60s
+    const recent60s = recentActions.filter(a => now - a.t < 60_000);
+    const sameInLast60s = recent60s.filter(a => a.name === actionName).length;
+    let mult = 1.0;
+    if (sameInLast60s >= 3)      mult = 0.4;
+    else if (sameInLast60s === 2) mult = 0.6;
+    else if (sameInLast60s === 1) mult = 0.8;
+
+    // variety bonus — 4+ разных действий в 5 минут даёт 1.5×
+    const recent5min = recentActions.filter(a => now - a.t < 300_000);
+    const uniqueActions = new Set(recent5min.map(a => a.name)).size;
+    if (uniqueActions >= 4) mult *= 1.5;
+
+    return mult;
+  }
+
+  function performAction(actionName) {
+    const now = Date.now();
+    const baseReward = ACTION_REWARDS[actionName] || 0;
+    const mult = computeMultiplier(actionName, now);
+    const reward = Math.max(1, Math.round(baseReward * mult));
+
+    bond += reward;
+    recentActions.push({ name: actionName, t: now });
+    if (recentActions.length > 30) recentActions.shift();
+
+    localStorage.setItem(BOND_KEY, String(bond));
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recentActions));
+
+    updateBondUI(reward);
+    triggerAnimation(actionName);
+
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  }
+
+  // ---- АНИМАЦИИ ----
+  const stage = document.querySelector('.cat-stage');
+  let animationTimeout = null;
+
+  function triggerAnimation(actionName) {
+    // снимаем предыдущий класс если есть
+    stage.classList.remove('acting-feed', 'acting-play', 'acting-pet', 'acting-sleep');
+    void stage.offsetWidth;  // перезапускаем CSS animation
+    stage.classList.add(`acting-${actionName}`);
+
+    if (animationTimeout) clearTimeout(animationTimeout);
+    // sleep длится дольше — пока зверёк "поспит"
+    const duration = actionName === 'sleep' ? 4000 : 2500;
+    animationTimeout = setTimeout(() => {
+      stage.classList.remove(`acting-${actionName}`);
+    }, duration);
+  }
+
+  // ---- КНОПКИ ----
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      performAction(btn.dataset.action);
+    });
   });
+
+  // ---- инициализация UI ----
+  updateBondUI();
+
 </script>
 
 </body>
