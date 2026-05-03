@@ -28,28 +28,28 @@
     text-align: center;
   }
 
-  /* ---- КОМНАТА (PNG-фон, меняется по времени суток) ---- */
+  /* ---- КОМНАТА (PNG-фон, два слоя для плавного cross-fade) ---- */
   .room {
     position: relative;
     width: 100%;
     max-width: 360px;
-    aspect-ratio: 1408 / 768;            /* пропорция AI-картинки */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    aspect-ratio: 1408 / 768;
     border-radius: 14px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.4);
     overflow: hidden;
-    transition: background-image 1.2s ease-in-out;
-    background-image: url('assets/images/room_day.jpg');     /* default */
+    background: #2a2422;
   }
 
-  /* по time-классам на body — меняем фон */
-  body.time-morning .room { background-image: url('assets/images/room_warm.jpg'); }
-  body.time-day     .room { background-image: url('assets/images/room_day.jpg'); }
-  body.time-evening .room { background-image: url('assets/images/room_warm.jpg'); }
-  body.time-dusk    .room { background-image: url('assets/images/room_dim.jpg'); }
-  body.time-night   .room { background-image: url('assets/images/room_night.jpg'); }
+  .room-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity 1.5s ease-in-out;
+  }
+  .room-bg-1 { opacity: 1; background-image: url('assets/images/room_day.jpg'); }
+  .room-bg-2 { opacity: 0; }
 
   /* ---- BOND-индикатор (вверху слева) ---- */
   .bond-counter {
@@ -94,13 +94,13 @@
   /* ---- КОТ (SVG, освещение через CSS filter) ---- */
   .cat-stage {
     position: absolute;
-    bottom: 14%;            /* стоит на полу в световом пятне */
-    left: 56%;              /* чуть правее центра — в области пятна */
+    bottom: 12%;            /* стоит на полу в световом пятне */
+    left: 56%;              /* чуть правее центра, в зоне света */
     transform: translateX(-50%);
-    width: 50%;
+    width: 22%;             /* реалистичная пропорция (кот в комнате — ~22% от ширины сцены) */
     aspect-ratio: 1 / 1;
     z-index: 2;
-    transition: filter 1.2s ease-in-out;
+    transition: filter 1.5s ease-in-out;
   }
   .cat-svg { width: 100%; height: 100%; }
 
@@ -281,6 +281,10 @@
   <h1>Наш тестовый зверь</h1>
 
   <div class="room">
+    <!-- два слоя фона для плавного cross-fade -->
+    <div class="room-bg room-bg-1"></div>
+    <div class="room-bg room-bg-2"></div>
+
     <div class="bond-counter">Bond 0</div>
     <div class="bond-popup"></div>
 
@@ -388,6 +392,17 @@
   // overrideTime — null или строка (если debug-кнопка нажата)
 
   let overrideTime = null;
+  let currentTime = null;          // что показано сейчас
+  let activeRoomBgLayer = 1;       // 1 или 2 — какой слой видим
+
+  // карта время → файл картинки
+  const ROOM_IMAGES = {
+    morning: 'assets/images/room_warm.jpg',
+    day:     'assets/images/room_day.jpg',
+    evening: 'assets/images/room_warm.jpg',
+    dusk:    'assets/images/room_dim.jpg',
+    night:   'assets/images/room_night.jpg',
+  };
 
   function computeAutoTime() {
     const hour = new Date().getHours();
@@ -399,8 +414,26 @@
   }
 
   function applyTime(name) {
+    if (name === currentTime) return;     // уже показано — нечего менять
+    currentTime = name;
+
+    // 1. CSS-фильтр на кота: меняем класс на body
     document.body.classList.remove('time-morning','time-day','time-evening','time-dusk','time-night');
     document.body.classList.add('time-' + name);
+
+    // 2. Cross-fade фоновых слоёв
+    const targetUrl = ROOM_IMAGES[name];
+    const visibleLayer = document.querySelector('.room-bg-' + activeRoomBgLayer);
+    const hiddenLayer  = document.querySelector('.room-bg-' + (activeRoomBgLayer === 1 ? 2 : 1));
+
+    // если та же самая картинка (например warm для morning и evening) — не делаем fade
+    const visibleBg = visibleLayer.style.backgroundImage || `url("${targetUrl}")`;
+    if (visibleBg.includes(targetUrl.split('/').pop())) return;
+
+    hiddenLayer.style.backgroundImage = `url('${targetUrl}')`;
+    hiddenLayer.style.opacity = '1';
+    visibleLayer.style.opacity = '0';
+    activeRoomBgLayer = activeRoomBgLayer === 1 ? 2 : 1;
   }
 
   function refreshTime() {
