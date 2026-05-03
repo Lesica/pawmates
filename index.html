@@ -392,10 +392,10 @@
   // overrideTime — null или строка (если debug-кнопка нажата)
 
   let overrideTime = null;
-  let currentTime = null;          // что показано сейчас
-  let activeRoomBgLayer = 1;       // 1 или 2 — какой слой видим
+  let currentTime = null;
+  let activeRoomBgLayer = 1;                              // какой слой видим (1 или 2)
+  let currentRoomImage = 'assets/images/room_day.jpg';    // какая картинка лежит на видимом слое
 
-  // карта время → файл картинки
   const ROOM_IMAGES = {
     morning: 'assets/images/room_warm.jpg',
     day:     'assets/images/room_day.jpg',
@@ -414,26 +414,26 @@
   }
 
   function applyTime(name) {
-    if (name === currentTime) return;     // уже показано — нечего менять
+    if (name === currentTime) return;
     currentTime = name;
 
-    // 1. CSS-фильтр на кота: меняем класс на body
+    // 1. CSS-фильтр на кота
     document.body.classList.remove('time-morning','time-day','time-evening','time-dusk','time-night');
     document.body.classList.add('time-' + name);
 
-    // 2. Cross-fade фоновых слоёв
+    // 2. Cross-fade фона (если картинка реально меняется)
     const targetUrl = ROOM_IMAGES[name];
+    if (targetUrl === currentRoomImage) return;
+
     const visibleLayer = document.querySelector('.room-bg-' + activeRoomBgLayer);
     const hiddenLayer  = document.querySelector('.room-bg-' + (activeRoomBgLayer === 1 ? 2 : 1));
-
-    // если та же самая картинка (например warm для morning и evening) — не делаем fade
-    const visibleBg = visibleLayer.style.backgroundImage || `url("${targetUrl}")`;
-    if (visibleBg.includes(targetUrl.split('/').pop())) return;
 
     hiddenLayer.style.backgroundImage = `url('${targetUrl}')`;
     hiddenLayer.style.opacity = '1';
     visibleLayer.style.opacity = '0';
+
     activeRoomBgLayer = activeRoomBgLayer === 1 ? 2 : 1;
+    currentRoomImage = targetUrl;
   }
 
   function refreshTime() {
