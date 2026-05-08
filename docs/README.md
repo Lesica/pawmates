@@ -13,6 +13,8 @@
 - **[04_visual_style.md](04_visual_style.md)** — аналоговая графика, рефы, художественный workflow.
 - **[05_atmospheric_compass.md](05_atmospheric_compass.md)** — критерии «брать решение» / «выкидывать».
 - **[06_open_questions.md](06_open_questions.md)** — нерешённые вопросы на потом.
+- **[07_visual_variations.md](07_visual_variations.md)** — насколько дорого менять цвет/форму/позу зверя.
+- **[08_real_world_sync.md](08_real_world_sync.md)** — реальная погода/время/локация в комнате.
 
 ### Папки
 
