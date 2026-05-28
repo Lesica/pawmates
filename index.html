@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PawMates — шаг 05 [build 2026-05-03-art-room]</title>
+<title>PawMates — шаг 06 [build 2026-05-28-sleep-zones]</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   body {
@@ -100,7 +100,8 @@
     width: 22%;             /* реалистичная пропорция (кот в комнате — ~22% от ширины сцены) */
     aspect-ratio: 1 / 1;
     z-index: 2;
-    transition: filter 1.5s ease-in-out;
+    /* left/bottom/transform анимируются — кот «протаскивается» к месту сна */
+    transition: filter 1.5s ease-in-out, left 1.3s ease-in-out, bottom 1.3s ease-in-out, transform 1.3s ease-in-out;
   }
   .cat-svg { width: 100%; height: 100%; }
 
@@ -493,13 +494,67 @@
     localStorage.setItem(RECENT_KEY, JSON.stringify(recentActions));
 
     updateBondUI(reward);
-    triggerAnimation(actionName);
+    if (actionName === 'sleep') {
+      goToSleep();                 // уходит в одну из зон и засыпает там
+    } else {
+      returnToBase();              // просыпается/возвращается в центр для взаимодействия
+      triggerAnimation(actionName);
+    }
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   }
 
   // ---- АНИМАЦИИ ----
   const stage = document.querySelector('.cat-stage');
   let animationTimeout = null;
+
+  // ---- СПАЛЬНЫЕ ЗОНЫ (5 мест + привязка к времени суток) ----
+  // Координаты в % внутри .room. Кот центрируется по X (translateX(-50%)),
+  // bottom — высота от пола. left/bottom анимируются CSS-transition'ом —
+  // кот плавно «протаскивается» к выбранному месту перед сном.
+  const CAT_BASE = { left: 56, bottom: 12 };   // базовая позиция (в световом пятне)
+  const SLEEP_ZONES = [
+    { id: 'chair',      left: 21, bottom: 25, w: { morning: 1, day: 1, evening: 4, dusk: 4, night: 5 } }, // кресло — уютно вечером/ночью
+    { id: 'windowsill', left: 80, bottom: 31, w: { morning: 3, day: 5, evening: 1, dusk: 0, night: 0 } }, // подоконник — на солнце днём
+    { id: 'sunspot',    left: 52, bottom: 13, w: { morning: 3, day: 4, evening: 1, dusk: 0, night: 0 } }, // световое пятно на полу
+    { id: 'rug',        left: 38, bottom: 11, w: { morning: 2, day: 2, evening: 2, dusk: 2, night: 2 } }, // коврик у двери — в любое время
+    { id: 'corner',     left: 11, bottom: 10, w: { morning: 1, day: 1, evening: 2, dusk: 3, night: 3 } }, // угол — затемно
+  ];
+  let lastSleepZone = null;
+
+  // Взвешенный выбор зоны по времени суток; реже повторяем прошлую.
+  function pickSleepZone() {
+    const t = currentTime || 'day';
+    const pool = [];
+    for (const z of SLEEP_ZONES) {
+      let weight = z.w[t] ?? 1;
+      if (z.id === lastSleepZone) weight = Math.max(0, weight - 2);
+      for (let i = 0; i < weight; i++) pool.push(z);
+    }
+    if (pool.length === 0) pool.push(...SLEEP_ZONES);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    lastSleepZone = pick.id;
+    return pick;
+  }
+
+  // Уложить спать: выбрать зону → протащить кота → по приходу заснуть.
+  function goToSleep() {
+    const zone = pickSleepZone();
+    const jL  = Math.random() * 6 - 3;    // микрорандом ±3% по X
+    const jB  = Math.random() * 4 - 2;    // ±2% по высоте
+    const ang = Math.random() * 16 - 8;   // лёгкий наклон ±8°
+    stage.style.left      = (zone.left + jL) + '%';
+    stage.style.bottom    = (zone.bottom + jB) + '%';
+    stage.style.transform = `translateX(-50%) rotate(${ang}deg)`;
+    if (animationTimeout) clearTimeout(animationTimeout);
+    setTimeout(() => triggerAnimation('sleep'), 1300);  // дождаться "прихода" (transition 1.3s)
+  }
+
+  // Вернуть кота на базовую позицию (для feed/play/pet — взаимодействие в центре).
+  function returnToBase() {
+    stage.style.left      = CAT_BASE.left + '%';
+    stage.style.bottom    = CAT_BASE.bottom + '%';
+    stage.style.transform = 'translateX(-50%) rotate(0deg)';
+  }
 
   function triggerAnimation(actionName) {
     stage.classList.remove('acting-feed','acting-play','acting-pet','acting-sleep');
