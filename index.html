@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PawMates — шаг 06 [build 2026-05-28-sleep-zones]</title>
+<title>PawMates — шаг 06 [build 2026-05-29-walk]</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   body {
@@ -144,6 +144,28 @@
   @keyframes breathe {
     0%, 100% { transform: scale(1, 1); }
     50%      { transform: scale(1.02, 0.98); }
+  }
+
+  /* ДВИЖЕНИЕ: walk — пока кот идёт к месту сна, он покачивается и перебирает лапами */
+  .cat-stage.walking .body-group {
+    animation: walk-bob 0.32s ease-in-out infinite;
+  }
+  @keyframes walk-bob {
+    0%, 100% { transform: translateY(0)    rotate(0deg); }
+    25%      { transform: translateY(-4px) rotate(-2.5deg); }
+    75%      { transform: translateY(-4px) rotate(2.5deg); }
+  }
+  .cat-stage.walking .paw-left {
+    transform-origin: 105px 235px;
+    animation: paw-step 0.32s ease-in-out infinite;
+  }
+  .cat-stage.walking .paw-right {
+    transform-origin: 155px 235px;
+    animation: paw-step 0.32s ease-in-out infinite 0.16s;
+  }
+  @keyframes paw-step {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
   }
 
   /* ДЕЙСТВИЕ: feed */
@@ -314,8 +336,8 @@
           <path d="M 100 175 Q 130 170 160 175" stroke="#B5732A" stroke-width="3" fill="none"/>
           <path d="M 105 190 Q 130 187 155 190" stroke="#B5732A" stroke-width="3" fill="none"/>
 
-          <ellipse cx="105" cy="235" rx="10" ry="8" fill="#E8A05A"/>
-          <ellipse cx="155" cy="235" rx="10" ry="8" fill="#E8A05A"/>
+          <ellipse class="paw-left"  cx="105" cy="235" rx="10" ry="8" fill="#E8A05A"/>
+          <ellipse class="paw-right" cx="155" cy="235" rx="10" ry="8" fill="#E8A05A"/>
 
           <circle cx="130" cy="115" r="65" fill="#E8A05A"/>
 
@@ -545,8 +567,12 @@
     stage.style.left      = (zone.left + jL) + '%';
     stage.style.bottom    = (zone.bottom + jB) + '%';
     stage.style.transform = `translateX(-50%) rotate(${ang}deg)`;
+    stage.classList.add('walking');                      // кот идёт — покачивается и перебирает лапами
     if (animationTimeout) clearTimeout(animationTimeout);
-    setTimeout(() => triggerAnimation('sleep'), 1300);  // дождаться "прихода" (transition 1.3s)
+    setTimeout(() => {
+      stage.classList.remove('walking');                 // пришёл на место
+      triggerAnimation('sleep');                         // и засыпает
+    }, 1300);
   }
 
   // Вернуть кота на базовую позицию (для feed/play/pet — взаимодействие в центре).
